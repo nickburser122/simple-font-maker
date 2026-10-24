@@ -1,3 +1,4 @@
+import { MAX_ALTS } from '../font/alternates';
 import type { BuildGlyph } from '../font/build';
 import type { CellResult } from '../vision/cells';
 import { captures } from './captures.svelte';
@@ -25,16 +26,23 @@ export function chosenFor(u: number): Source | null {
   return list.find((s) => s.id === want) ?? list[0] ?? null;
 }
 
-export function altFor(u: number): Source | null {
+export function altsFor(u: number): Source[] {
   const chosen = chosenFor(u);
-  return sourcesFor(u).find((s) => s.id !== chosen?.id) ?? null;
+  const rest = sourcesFor(u).filter((s) => s.id !== chosen?.id);
+  const want = settings.glyphs[u]?.alts;
+  return (want ? rest.filter((s) => want.includes(s.id)) : rest).slice(0, MAX_ALTS);
+}
+
+export function sourceLabel(s: Source, all: readonly Source[]): string {
+  const same = all.filter((o) => o.page === s.page).length > 1;
+  return same ? `page ${s.page} · ${s.name}` : `page ${s.page}`;
 }
 
 export function alternateCount(): number {
   const unicodes = new Set<number>();
   for (const it of captures.items) for (const c of it.cells) if (!c.missing) unicodes.add(c.unicode);
   let n = 0;
-  for (const u of unicodes) if (!settings.glyphs[u]?.missing && altFor(u)) n++;
+  for (const u of unicodes) if (!settings.glyphs[u]?.missing && altsFor(u).length > 0) n++;
   return n;
 }
 
@@ -47,16 +55,14 @@ export function collectGlyphs(): BuildGlyph[] {
     if (a?.missing) continue;
     const s = chosenFor(u);
     if (!s) continue;
-    const alt = settings.alternates ? altFor(u) : null;
+    const alts = settings.alternates ? altsFor(u) : [];
     out.push({
       unicode: u,
       w: s.cell.w,
       h: s.cell.h,
       baseline: s.cell.guides.baseline,
       bitmap: s.cell.bitmap,
-      alt: alt
-        ? { w: alt.cell.w, h: alt.cell.h, baseline: alt.cell.guides.baseline, bitmap: alt.cell.bitmap }
-        : undefined,
+      alts: alts.length > 0 ? alts.map((x) => ({ w: x.cell.w, h: x.cell.h, baseline: x.cell.guides.baseline, bitmap: x.cell.bitmap })) : undefined,
       dy: a?.dy,
       scale: a?.scale,
       lsb: a?.lsb ?? undefined,

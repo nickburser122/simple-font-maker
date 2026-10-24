@@ -70,7 +70,7 @@ describe('settings history', () => {
   });
 
   it('restores per-glyph adjustments', () => {
-    loadSettings({ glyphs: { 97: { dy: 5, scale: 1.2, lsb: null, rsb: null, missing: false, source: null } } });
+    loadSettings({ glyphs: { 97: { dy: 5, scale: 1.2, lsb: null, rsb: null, missing: false, source: null, alts: null } } });
     commitSettings(snap());
     loadSettings({});
     commitSettings(snap());

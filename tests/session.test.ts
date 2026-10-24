@@ -100,8 +100,8 @@ describe('sanitizeSettings', () => {
       },
     });
     expect(Object.keys(out.glyphs!).map(Number)).toEqual([97, 101]);
-    expect(out.glyphs![97]).toEqual({ dy: 5, scale: 1.2, lsb: 3, rsb: null, missing: true, source: 'abc' });
-    expect(out.glyphs![101]).toEqual({ dy: 1, scale: 2, lsb: null, rsb: null, missing: false, source: null });
+    expect(out.glyphs![97]).toEqual({ dy: 5, scale: 1.2, lsb: 3, rsb: null, missing: true, source: 'abc', alts: null });
+    expect(out.glyphs![101]).toEqual({ dy: 1, scale: 2, lsb: null, rsb: null, missing: false, source: null, alts: null });
   });
 });
 
@@ -121,5 +121,24 @@ describe('kerning setting in sessions', () => {
 
   it('starts new projects at 50', () => {
     expect(DEFAULT_SETTINGS.kerning).toBe(50);
+  });
+});
+
+describe('per-glyph alternates in sessions', () => {
+  it('keeps a string list, and falls back to automatic for anything else', () => {
+    const out = sanitizeSettings({
+      glyphs: {
+        1: { dy: 0, scale: 1, alts: ['a', 'b'] },
+        2: { dy: 0, scale: 1, alts: [1, 2] },
+        3: { dy: 0, scale: 1, alts: 'a' },
+        4: { dy: 0, scale: 1 },
+        5: { dy: 0, scale: 1, alts: [] },
+      },
+    });
+    expect(out.glyphs![1].alts).toEqual(['a', 'b']);
+    expect(out.glyphs![2].alts).toBeNull();
+    expect(out.glyphs![3].alts).toBeNull();
+    expect(out.glyphs![4].alts).toBeNull();
+    expect(out.glyphs![5].alts).toEqual([]);
   });
 });

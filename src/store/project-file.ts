@@ -139,6 +139,7 @@ export function parseProjectFile(text: string): ProjectFile {
       rsb: g.rsb === null ? null : num(g.rsb),
       missing: g.missing === true,
       source: typeof g.source === 'string' ? g.source : null,
+      alts: Array.isArray(g.alts) && g.alts.every((x) => typeof x === 'string') ? (g.alts as string[]) : null,
     };
   }
   return {

@@ -12,6 +12,7 @@ export interface GlyphAdjust {
   rsb: number | null;
   missing: boolean;
   source: string | null;
+  alts: string[] | null;
 }
 
 export interface Settings {
@@ -29,7 +30,7 @@ export interface Settings {
   glyphs: Record<number, GlyphAdjust>;
 }
 
-export const DEFAULT_ADJUST: GlyphAdjust = { dy: 0, scale: 1, lsb: null, rsb: null, missing: false, source: null };
+export const DEFAULT_ADJUST: GlyphAdjust = { dy: 0, scale: 1, lsb: null, rsb: null, missing: false, source: null, alts: null };
 
 export const settings: Settings = $state(structuredClone(DEFAULT_SETTINGS));
 

@@ -187,7 +187,7 @@ describe('kerning in built fonts', () => {
 
   it('applies the same kerning to alternate variants', async () => {
     const gl = glyphs();
-    gl[0] = { ...gl[0], alt: { w: W, h: H, baseline: BASE, bitmap: gl[0].bitmap } };
+    gl[0] = { ...gl[0], alts: [{ w: W, h: H, baseline: BASE, bitmap: gl[0].bitmap }] };
     const { buffer } = await buildFont(gl, { ...settings, kerning: 1 });
     const f = parse(buffer);
     const names = Array.from({ length: f.numGlyphs }, (_, i) => f.glyphs.get(i).name);

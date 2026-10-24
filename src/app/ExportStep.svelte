@@ -11,7 +11,7 @@
   const glyphs = $derived(collectGlyphs());
   const total = $derived(SETS[project.setId].chars.length);
   const missing = $derived(missingChars(SETS[project.setId].chars, glyphs.map((g) => g.unicode)));
-  const altCount = $derived(glyphs.filter((g) => g.alt).length);
+  const altCount = $derived(glyphs.filter((g) => g.alts).length);
   const SHOWN = 24;
   const canWoff = woffSupported();
   let busy = $state(false);

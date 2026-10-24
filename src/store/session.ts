@@ -64,6 +64,7 @@ export function sanitizeSettings(v: unknown): Partial<Settings> {
         rsb: finite(g.rsb) ? g.rsb : null,
         missing: g.missing === true,
         source: typeof g.source === 'string' ? g.source : null,
+        alts: Array.isArray(g.alts) && g.alts.every((x) => typeof x === 'string') ? (g.alts as string[]) : null,
       };
     }
     out.glyphs = glyphs;

@@ -14,7 +14,7 @@ function sample(): ProjectFile {
     designer: '',
     settings: {
       ...structuredClone(DEFAULT_SETTINGS),
-      glyphs: { 97: { dy: 5, scale: 1.1, lsb: null, rsb: 20, missing: false, source: 'abc' } },
+      glyphs: { 97: { dy: 5, scale: 1.1, lsb: null, rsb: 20, missing: false, source: 'abc', alts: null } },
     },
     captures: [
       {

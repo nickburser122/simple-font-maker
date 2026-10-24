@@ -3,7 +3,7 @@ import type { TraceParams } from '../trace/params';
 import type { Contour } from '../trace/path-parse';
 import { traceBitmap } from '../trace/potrace';
 import type { Tracer } from '../trace/cache';
-import { buildAlternateGsub, type AlternatePair } from './alternates';
+import { MAX_ALTS, buildAlternateGsub, type AlternateSet } from './alternates';
 import { makeKernGpos, type KernClass } from './gpos';
 import { computeKerning, profileOf, type KernGlyph } from './kerning';
 import { withTables } from './sfnt';
@@ -29,7 +29,7 @@ export interface GlyphImage {
 
 export interface BuildGlyph extends GlyphImage {
   unicode: number;
-  alt?: GlyphImage;
+  alts?: GlyphImage[];
   dy?: number;
   scale?: number;
   lsb?: number;
@@ -97,7 +97,7 @@ export async function buildFont(
     notdef(),
     new Glyph({ name: 'space', unicode: 32, advanceWidth: Math.round(s.space), path: new Path() }),
   ];
-  const pairs: AlternatePair[] = [];
+  const sets: AlternateSet[] = [];
   const kernGlyphs: KernGlyph[] = [];
   const kernClasses: { glyphs: number[] }[] = [];
   const place = async (g: BuildGlyph, img: GlyphImage) => {
@@ -128,18 +128,21 @@ export async function buildFont(
       const base = out.length - 1;
       kernGlyphs.push({ profile: profileOf(m.contours, Math.round(m.advance)) });
       kernClasses.push({ glyphs: [base] });
-      const a = g.alt ? await place(g, g.alt) : null;
-      if (a) {
+      const made: number[] = [];
+      for (const [k, img] of (g.alts ?? []).slice(0, MAX_ALTS).entries()) {
+        const a = await place(g, img);
+        if (!a) continue;
         out.push(
           new Glyph({
-            name: `${glyphName(g.unicode)}.alt`,
+            name: `${glyphName(g.unicode)}.alt${k === 0 ? '' : k + 1}`,
             advanceWidth: Math.round(a.advance),
             path: toPath(a.contours),
           }),
         );
-        pairs.push({ base, alt: out.length - 1 });
+        made.push(out.length - 1);
         kernClasses[kernClasses.length - 1].glyphs.push(out.length - 1);
       }
+      if (made.length > 0) sets.push({ base, alts: made });
     }
     onProgress?.(i + 1, sorted.length);
   }
@@ -153,7 +156,7 @@ export async function buildFont(
     version: 'Version 1.000',
     glyphs: out,
   });
-  const gsub = buildAlternateGsub(pairs);
+  const gsub = buildAlternateGsub(sets);
   if (gsub) font.tables.gsub = gsub;
   let buffer = font.toArrayBuffer();
   const strength = s.kerning ?? 0;

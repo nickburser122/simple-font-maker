@@ -1,12 +1,23 @@
 <script lang="ts">
   import { unicodeLabel } from '../charset/sets';
-  import { sourcesFor } from '../store/glyphs';
+  import { MAX_ALTS } from '../font/alternates';
+  import { altsFor, chosenFor, sourceLabel, sourcesFor } from '../store/glyphs';
   import { patchGlyph, resetGlyph, settings, DEFAULT_ADJUST } from '../store/settings.svelte';
 
   let { unicode, char }: { unicode: number; char: string } = $props();
 
   const a = $derived({ ...DEFAULT_ADJUST, ...settings.glyphs[unicode] });
   const sources = $derived(sourcesFor(unicode));
+  const primary = $derived(chosenFor(unicode));
+  const others = $derived(sources.filter((s) => s.id !== primary?.id));
+  const used = $derived(new Set(altsFor(unicode).map((s) => s.id)));
+
+  function toggleAlt(id: string): void {
+    const next = new Set(used);
+    if (next.has(id)) next.delete(id);
+    else if (next.size < MAX_ALTS) next.add(id);
+    patchGlyph(unicode, { alts: others.filter((s) => next.has(s.id)).map((s) => s.id) });
+  }
 
   function bearing(e: Event, key: 'lsb' | 'rsb'): void {
     const v = (e.currentTarget as HTMLInputElement).value.trim();
@@ -46,9 +57,23 @@
             type="button"
             class="toggle"
             aria-pressed={(a.source ?? sources[0].id) === s.id}
-            onclick={() => patchGlyph(unicode, { source: s.id })}>page {s.page}</button
+            onclick={() => patchGlyph(unicode, { source: s.id })}>{sourceLabel(s, sources)}</button
           >
         {/each}
+      </div>
+    </div>
+  {/if}
+
+  {#if settings.alternates && others.length > 0}
+    <div role="group" aria-label="alternate shapes for this glyph">
+      <span class="meta">alternates (up to {MAX_ALTS})</span>
+      <div class="toggles">
+        {#each others as s}
+          <button type="button" class="toggle" aria-pressed={used.has(s.id)} onclick={() => toggleAlt(s.id)}>{sourceLabel(s, sources)}</button>
+        {/each}
+        {#if a.alts !== null}
+          <button type="button" class="link" onclick={() => patchGlyph(unicode, { alts: null })}>auto</button>
+        {/if}
       </div>
     </div>
   {/if}

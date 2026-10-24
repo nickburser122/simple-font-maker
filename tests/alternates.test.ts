@@ -4,7 +4,7 @@ import { buildAlternateGsub } from '../src/font/alternates';
 import { buildFont, type BuildGlyph, type BuildSettings, type GlyphImage } from '../src/font/build';
 import { DEFAULT_TRACE } from '../src/trace/params';
 import { captures, type Capture } from '../src/store/captures.svelte';
-import { alternateCount, altFor, chosenFor, collectGlyphs } from '../src/store/glyphs';
+import { alternateCount, altsFor, chosenFor, collectGlyphs, sourceLabel, sourcesFor } from '../src/store/glyphs';
 import { resetSettings, settings } from '../src/store/settings.svelte';
 import { parseProjectFile } from '../src/store/project-file';
 import { DEFAULT_SETTINGS } from '../src/store/defaults';
@@ -30,12 +30,13 @@ function img(x1: number, empty = false): GlyphImage {
 describe('buildAlternateGsub', () => {
   it('returns null when there are no pairs', () => {
     expect(buildAlternateGsub([])).toBeNull();
+    expect(buildAlternateGsub([{ base: 2, alts: [] }])).toBeNull();
   });
 
   it('builds a calt feature with a substitution and a chaining lookup', () => {
     const g = buildAlternateGsub([
-      { base: 6, alt: 7 },
-      { base: 2, alt: 3 },
+      { base: 6, alts: [7] },
+      { base: 2, alts: [3] },
     ])!;
     expect(g.features.map((f) => f.tag)).toEqual(['calt']);
     expect(g.features[0].feature.lookupListIndexes).toEqual([1]);
@@ -51,7 +52,7 @@ describe('buildAlternateGsub', () => {
   });
 
   it('keeps coverage lists independent so writers cannot alias them', () => {
-    const g = buildAlternateGsub([{ base: 2, alt: 3 }])!;
+    const g = buildAlternateGsub([{ base: 2, alts: [3] }])!;
     const [, chain] = g.lookups;
     if (chain.lookupType !== 6) throw new Error('unexpected lookup');
     expect(chain.subtables[0].backtrackCoverage[0]).not.toBe(chain.subtables[0].inputCoverage[0]);
@@ -60,8 +61,8 @@ describe('buildAlternateGsub', () => {
   it('rejects duplicate base glyphs', () => {
     expect(() =>
       buildAlternateGsub([
-        { base: 2, alt: 3 },
-        { base: 2, alt: 4 },
+        { base: 2, alts: [3] },
+        { base: 2, alts: [4] },
       ]),
     ).toThrow();
   });
@@ -70,8 +71,8 @@ describe('buildAlternateGsub', () => {
 describe('buildFont with alternates', () => {
   it('adds alternate glyphs without unicode and a GSUB table', async () => {
     const gl: BuildGlyph[] = [
-      { unicode: 97, ...img(30), alt: img(60) },
-      { unicode: 98, ...img(30), alt: img(50) },
+      { unicode: 97, ...img(30), alts: [img(60)] },
+      { unicode: 98, ...img(30), alts: [img(50)] },
       { unicode: 99, ...img(30) },
     ];
     const { buffer, outlines } = await buildFont(gl, settingsB);
@@ -95,7 +96,7 @@ describe('buildFont with alternates', () => {
   });
 
   it('skips an empty alternate and keeps the base glyph', async () => {
-    const { buffer } = await buildFont([{ unicode: 97, ...img(30), alt: img(60, true) }], settingsB);
+    const { buffer } = await buildFont([{ unicode: 97, ...img(30), alts: [img(60, true)] }], settingsB);
     const f = parse(buffer);
     expect(f.numGlyphs).toBe(3);
     expect(f.tables.gsub).toBeUndefined();
@@ -103,7 +104,7 @@ describe('buildFont with alternates', () => {
 
   it('applies the per-glyph spacing and scale to the alternate too', async () => {
     const plain = await buildFont([{ unicode: 97, ...img(60) }], settingsB);
-    const withAlt = await buildFont([{ unicode: 97, ...img(30), alt: img(60), lsb: 40, rsb: 40 }], settingsB);
+    const withAlt = await buildFont([{ unicode: 97, ...img(30), alts: [img(60)], lsb: 40, rsb: 40 }], settingsB);
     const a = parse(plain.buffer).glyphs.get(2).advanceWidth;
     const b = parse(withAlt.buffer).glyphs.get(3).advanceWidth;
     expect(b).toBe(a);
@@ -111,7 +112,7 @@ describe('buildFont with alternates', () => {
 
   it('is byte-identical for glyphs without alternates', async () => {
     const a = await buildFont([{ unicode: 97, ...img(30) }], settingsB);
-    const b = await buildFont([{ unicode: 97, ...img(30), alt: undefined }], settingsB);
+    const b = await buildFont([{ unicode: 97, ...img(30), alts: undefined }], settingsB);
     expect(new Uint8Array(a.buffer)).toEqual(new Uint8Array(b.buffer));
   });
 });
@@ -167,7 +168,7 @@ describe('collecting alternates from captures', () => {
   it('adds no alternate while the setting is off', () => {
     captures.items.push(capture(1, 1, [cellFor(97, 30)]), capture(2, 2, [cellFor(97, 60)]));
     expect(alternateCount()).toBe(1);
-    expect(collectGlyphs()[0].alt).toBeUndefined();
+    expect(collectGlyphs()[0].alts).toBeUndefined();
   });
 
   it('uses the other capture as the alternate when enabled', () => {
@@ -175,28 +176,28 @@ describe('collecting alternates from captures', () => {
     settings.alternates = true;
     const g = collectGlyphs()[0];
     expect(chosenFor(97)?.id).toBe('u1');
-    expect(altFor(97)?.id).toBe('u2');
+    expect(altsFor(97).map((x) => x.id)).toEqual(['u2']);
     expect(g.bitmap).toBe(captures.items[0].cells[0].bitmap);
-    expect(g.alt?.bitmap).toBe(captures.items[1].cells[0].bitmap);
+    expect(g.alts?.[0].bitmap).toBe(captures.items[1].cells[0].bitmap);
   });
 
   it('swaps primary and alternate when a different source is chosen', () => {
     captures.items.push(capture(1, 1, [cellFor(97, 30)]), capture(2, 2, [cellFor(97, 60)]));
     settings.alternates = true;
-    settings.glyphs[97] = { dy: 0, scale: 1, lsb: null, rsb: null, missing: false, source: 'u2' };
+    settings.glyphs[97] = { dy: 0, scale: 1, lsb: null, rsb: null, missing: false, source: 'u2', alts: null };
     const g = collectGlyphs()[0];
     expect(g.bitmap).toBe(captures.items[1].cells[0].bitmap);
-    expect(g.alt?.bitmap).toBe(captures.items[0].cells[0].bitmap);
+    expect(g.alts?.[0].bitmap).toBe(captures.items[0].cells[0].bitmap);
   });
 
   it('ignores missing cells and glyphs marked missing', () => {
     captures.items.push(capture(1, 1, [cellFor(97, 30), cellFor(98, 30)]), capture(2, 2, [cellFor(97, 60, true), cellFor(98, 60)]));
     settings.alternates = true;
-    settings.glyphs[98] = { dy: 0, scale: 1, lsb: null, rsb: null, missing: true, source: null };
+    settings.glyphs[98] = { dy: 0, scale: 1, lsb: null, rsb: null, missing: true, source: null, alts: null };
     expect(alternateCount()).toBe(0);
     const out = collectGlyphs();
     expect(out.map((g) => g.unicode)).toEqual([97]);
-    expect(out[0].alt).toBeUndefined();
+    expect(out[0].alts).toBeUndefined();
   });
 
   it('counts only glyphs with a second distinct capture', () => {
@@ -226,5 +227,103 @@ describe('alternates setting in project files', () => {
     const old = JSON.parse(file(true));
     delete old.settings.alternates;
     expect(parseProjectFile(JSON.stringify(old)).settings.alternates).toBe(false);
+  });
+});
+
+describe('several alternates', () => {
+  it('builds cycling lookups for up to three alternates', () => {
+    const g = buildAlternateGsub([
+      { base: 2, alts: [3, 4, 5] },
+      { base: 6, alts: [7] },
+    ])!;
+    expect(g.lookups.map((l) => l.lookupType)).toEqual([1, 1, 1, 6]);
+    expect(g.features[0].feature.lookupListIndexes).toEqual([3]);
+    const [s1, s2, s3, chain] = g.lookups;
+    if (s1.lookupType !== 1 || s2.lookupType !== 1 || s3.lookupType !== 1 || chain.lookupType !== 6) throw new Error('lookups');
+    expect(s1.subtables[0].coverage.glyphs).toEqual([2, 6]);
+    expect(s1.subtables[0].substitute).toEqual([3, 7]);
+    expect(s2.subtables[0].coverage.glyphs).toEqual([2]);
+    expect(s2.subtables[0].substitute).toEqual([4]);
+    expect(s3.subtables[0].substitute).toEqual([5]);
+    expect(chain.subtables).toHaveLength(3);
+    expect(chain.subtables[0].backtrackCoverage[0].glyphs).toEqual([2, 6]);
+    expect(chain.subtables[1].backtrackCoverage[0].glyphs).toEqual([3, 7]);
+    expect(chain.subtables[2].backtrackCoverage[0].glyphs).toEqual([4]);
+    expect(chain.subtables.map((t) => t.lookupRecords[0].lookupListIndex)).toEqual([0, 1, 2]);
+    expect(chain.subtables[1].inputCoverage[0].glyphs).toEqual([2]);
+  });
+
+  it('never needs more than three alternates', () => {
+    const g = buildAlternateGsub([{ base: 2, alts: [3, 4, 5, 6, 7] }])!;
+    expect(g.lookups).toHaveLength(4);
+  });
+
+  it('names and orders alternate glyphs and keeps unicode only on the base', async () => {
+    const { buffer } = await buildFont([{ unicode: 97, ...img(30), alts: [img(40), img(50), img(60)] }], settingsB);
+    const f = parse(buffer);
+    const names = Array.from({ length: f.numGlyphs }, (_, i) => f.glyphs.get(i).name);
+    expect(names).toEqual(['.notdef', 'space', 'uni0061', 'uni0061.alt', 'uni0061.alt2', 'uni0061.alt3']);
+    expect([3, 4, 5].every((i) => f.glyphs.get(i).unicode === undefined)).toBe(true);
+    const gsub = f.tables.gsub as { lookups: { lookupType: number }[] };
+    expect(gsub.lookups.map((l) => l.lookupType)).toEqual([1, 1, 1, 6]);
+  });
+
+  it('ignores extra alternates beyond three', async () => {
+    const { buffer } = await buildFont([{ unicode: 97, ...img(30), alts: [img(40), img(50), img(60), img(70)] }], settingsB);
+    expect(parse(buffer).numGlyphs).toBe(6);
+  });
+});
+
+describe('choosing alternates per glyph', () => {
+  beforeEach(() => {
+    captures.items.splice(0);
+    resetSettings();
+  });
+
+  function four(): void {
+    captures.items.push(
+      capture(1, 1, [cellFor(97, 30)]),
+      capture(2, 2, [cellFor(97, 40)]),
+      capture(3, 3, [cellFor(97, 50)]),
+      capture(4, 4, [cellFor(97, 60)]),
+      capture(5, 5, [cellFor(97, 70)]),
+    );
+  }
+
+  it('uses every other sample up to the limit by default', () => {
+    four();
+    expect(altsFor(97).map((s) => s.id)).toEqual(['u2', 'u3', 'u4']);
+  });
+
+  it('honours an explicit list, in capture order, and may be empty', () => {
+    four();
+    settings.glyphs[97] = { dy: 0, scale: 1, lsb: null, rsb: null, missing: false, source: null, alts: ['u5', 'u3'] };
+    expect(altsFor(97).map((s) => s.id)).toEqual(['u3', 'u5']);
+    settings.glyphs[97].alts = [];
+    expect(altsFor(97)).toEqual([]);
+    settings.alternates = true;
+    expect(collectGlyphs()[0].alts).toBeUndefined();
+  });
+
+  it('never offers the primary sample as an alternate', () => {
+    four();
+    settings.glyphs[97] = { dy: 0, scale: 1, lsb: null, rsb: null, missing: false, source: 'u1', alts: ['u1', 'u2'] };
+    expect(altsFor(97).map((s) => s.id)).toEqual(['u2']);
+  });
+
+  it('passes the chosen samples to the font build in order', () => {
+    four();
+    settings.alternates = true;
+    const g = collectGlyphs()[0];
+    expect(g.alts).toHaveLength(3);
+    expect(g.alts?.map((a) => a.bitmap)).toEqual([2, 3, 4].map((i) => captures.items[i - 1].cells[0].bitmap));
+  });
+
+  it('labels samples from the same page by file name', () => {
+    captures.items.push(capture(1, 1, [cellFor(97, 30)]), capture(2, 1, [cellFor(97, 40)]), capture(3, 2, [cellFor(97, 50)]));
+    const all = sourcesFor(97);
+    expect(sourceLabel(all[0], all)).toBe('page 1 · p1');
+    expect(sourceLabel(all[1], all)).toBe('page 1 · p2');
+    expect(sourceLabel(all[2], all)).toBe('page 2');
   });
 });
