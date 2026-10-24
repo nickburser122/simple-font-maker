@@ -89,14 +89,16 @@
         disabled={alts === 0 && !settings.alternates}
         onclick={() => (settings.alternates = !settings.alternates)}>alternate shapes</button
       >
-      <span class="meta">{found} of {chars.length} glyphs found. missing ones are marked in red.</span>
-      <span class="meta">
-        {#if alts > 0}
-          {alts} {alts === 1 ? 'glyph has' : 'glyphs have'} a second sample{settings.alternates ? ', used as an alternate' : ''}.
-        {:else}
-          photograph a page twice to give letters a second shape.
-        {/if}
-      </span>
+      <div class="notes">
+        <span class="meta">{found} of {chars.length} glyphs found. missing ones are marked in red.</span>
+        <span class="meta">
+          {#if alts > 0}
+            {alts} {alts === 1 ? 'glyph has' : 'glyphs have'} a second sample{settings.alternates ? ', used as an alternate' : ''}.
+          {:else}
+            photograph a page twice to give letters a second shape.
+          {/if}
+        </span>
+      </div>
     </div>
   </div>
 

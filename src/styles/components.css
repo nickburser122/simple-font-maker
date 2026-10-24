@@ -516,9 +516,26 @@ input[type='range']::-moz-range-thumb {
   border-top: 1px solid var(--hairline);
 }
 
-.globals .link:disabled {
+.globals .link:disabled,
+.toggle:disabled {
   opacity: 0.35;
   cursor: default;
+}
+
+.globals .actions {
+  flex-wrap: wrap;
+  row-gap: 12px;
+}
+
+.globals .toggle {
+  white-space: nowrap;
+}
+
+.notes {
+  display: grid;
+  gap: 4px;
+  flex: 1 1 280px;
+  min-width: 0;
 }
 
 .gridwrap {
