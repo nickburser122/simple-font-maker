@@ -12,6 +12,9 @@ function sample(): ProjectFile {
     paper: 'a4',
     family: 'My Hand',
     designer: '',
+    copyright: '(c) me',
+    license: 'OFL',
+    fontVersion: '1.250',
     settings: {
       ...structuredClone(DEFAULT_SETTINGS),
       glyphs: { 97: { dy: 5, scale: 1.1, lsb: null, rsb: 20, missing: false, source: 'abc', alts: null } },

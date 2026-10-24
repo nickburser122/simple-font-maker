@@ -78,6 +78,18 @@
       <span class="meta">designer (optional)</span>
       <input type="text" bind:value={fontSettings.designer} maxlength="64" spellcheck="false" />
     </label>
+    <label class="field">
+      <span class="meta">version</span>
+      <input type="text" bind:value={fontSettings.fontVersion} maxlength="8" spellcheck="false" inputmode="decimal" />
+    </label>
+    <label class="field">
+      <span class="meta">copyright (optional)</span>
+      <input type="text" bind:value={fontSettings.copyright} maxlength="200" spellcheck="false" />
+    </label>
+    <label class="field">
+      <span class="meta">license (optional)</span>
+      <input type="text" bind:value={fontSettings.license} maxlength="200" spellcheck="false" />
+    </label>
     <p class="meta count">{glyphs.length} of {total} glyphs ready. missing ones are left out.{settings.alternates && altCount > 0 ? ` ${altCount} have an alternate shape.` : ''}</p>
     {#if missing.length > 0}
       <p class="meta missing" aria-label="glyphs not in the font">

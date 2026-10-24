@@ -2,6 +2,7 @@ import type { CellResult } from '../vision/cells';
 import type { Pt } from '../vision/types';
 import { addFile, addRestored, captures, clearCaptures } from './captures.svelte';
 import { fontSettings } from './font.svelte';
+import { DEFAULT_META } from './meta';
 import { idbDelete, idbErase, idbGet, idbSet } from './idb';
 import { nav } from './nav.svelte';
 import { decodeBitmap, encodeBitmap } from './png';
@@ -22,6 +23,9 @@ export function currentProject(): IdbProject | null {
     paper: project.paper,
     family: fontSettings.family,
     designer: fontSettings.designer,
+    copyright: fontSettings.copyright,
+    license: fontSettings.license,
+    fontVersion: fontSettings.fontVersion,
     settings: $state.snapshot(settings) as Settings,
     captures: captures.items
       .filter((c) => c.status !== 'failed')
@@ -53,6 +57,9 @@ export async function loadSession(): Promise<void> {
       project.paper = p.paper;
       fontSettings.family = p.family;
       fontSettings.designer = p.designer;
+      fontSettings.copyright = p.copyright;
+      fontSettings.license = p.license;
+      fontSettings.fontVersion = p.fontVersion;
       loadSettings(p.settings);
       for (const c of p.captures) {
         if (c.cells) addRestored({ ...c, cells: c.cells });
@@ -82,6 +89,9 @@ export function exportProject(): string {
     paper: project.paper,
     family: fontSettings.family,
     designer: fontSettings.designer,
+    copyright: fontSettings.copyright,
+    license: fontSettings.license,
+    fontVersion: fontSettings.fontVersion,
     settings: $state.snapshot(settings) as Settings,
     captures: captures.items
       .filter((c) => c.status !== 'failed')
@@ -130,6 +140,9 @@ export async function importProject(text: string): Promise<void> {
   project.paper = f.paper;
   fontSettings.family = f.family;
   fontSettings.designer = f.designer;
+  fontSettings.copyright = f.copyright;
+  fontSettings.license = f.license;
+  fontSettings.fontVersion = f.fontVersion;
   loadSettings(f.settings);
   for (const c of decoded) addRestored(c);
   nav.step = 3;
@@ -147,6 +160,7 @@ export async function eraseEverything(): Promise<void> {
   project.paper = 'a4';
   fontSettings.family = 'My Handwriting';
   fontSettings.designer = '';
+  Object.assign(fontSettings, DEFAULT_META);
   resetSettings();
   nav.step = 1;
   persistState.ready = true;

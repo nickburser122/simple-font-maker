@@ -87,6 +87,9 @@ export function buildSettings(): BuildSettings {
   return {
     family: fontSettings.family,
     designer: fontSettings.designer,
+    copyright: fontSettings.copyright,
+    license: fontSettings.license,
+    version: fontSettings.fontVersion,
     lsb: SIDE_BEARING + settings.spacing,
     rsb: SIDE_BEARING + settings.spacing,
     space: settings.space,

@@ -3,6 +3,7 @@ import { PAPERS, type PaperId } from '../template/layout';
 import type { CellResult } from '../vision/cells';
 import type { Pt } from '../vision/types';
 import { DEFAULT_SETTINGS } from './defaults';
+import { readMeta } from './meta';
 import type { GlyphAdjust, Settings } from './settings.svelte';
 
 export interface IdbCapture {
@@ -20,6 +21,9 @@ export interface IdbProject {
   paper: PaperId;
   family: string;
   designer: string;
+  copyright: string;
+  license: string;
+  fontVersion: string;
   settings: Settings;
   captures: IdbCapture[];
 }
@@ -83,6 +87,7 @@ export function readSession(v: unknown): IdbProject | null {
     paper: v.paper as PaperId,
     family: typeof v.family === 'string' ? v.family : '',
     designer: typeof v.designer === 'string' ? v.designer : '',
+    ...readMeta(v),
     settings: { ...structuredClone(DEFAULT_SETTINGS), kerning: 0, ...sanitizeSettings(v.settings) },
     captures: v.captures as IdbCapture[],
   };

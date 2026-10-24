@@ -7,6 +7,7 @@ import { MAX_ALTS, buildAlternateGsub, type AlternateSet } from './alternates';
 import { makeKernGpos, type KernClass } from './gpos';
 import { computeKerning, profileOf, type KernGlyph } from './kerning';
 import { withTables } from './sfnt';
+import { tuneVerticalMetrics } from './vertical';
 import { PPM } from '../vision/cells';
 import { ASCENDER, DESCENDER, UPM, mapContours, unitsPerPixel } from './metrics';
 
@@ -18,6 +19,9 @@ export interface BuildSettings {
   space: number;
   trace: TraceParams;
   kerning?: number;
+  copyright?: string;
+  license?: string;
+  version?: string;
 }
 
 export interface GlyphImage {
@@ -153,7 +157,9 @@ export async function buildFont(
     ascender: ASCENDER,
     descender: DESCENDER,
     designer: s.designer.trim(),
-    version: 'Version 1.000',
+    version: `Version ${s.version?.trim() || '1.000'}`,
+    copyright: s.copyright?.trim() || undefined,
+    license: s.license?.trim() || undefined,
     glyphs: out,
   });
   const gsub = buildAlternateGsub(sets);
@@ -164,5 +170,5 @@ export async function buildFont(
     const gpos = makeKernGpos(computeKerning(kernGlyphs, strength), kernClasses as KernClass[]);
     if (gpos) buffer = withTables(buffer, { GPOS: gpos });
   }
-  return { buffer, outlines };
+  return { buffer: tuneVerticalMetrics(buffer, ASCENDER, DESCENDER), outlines };
 }

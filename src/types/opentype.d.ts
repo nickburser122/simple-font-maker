@@ -41,6 +41,8 @@ declare module 'opentype.js' {
     descender: number;
     designer?: string;
     version?: string;
+    copyright?: string;
+    license?: string;
     glyphs: Glyph[];
   }
 

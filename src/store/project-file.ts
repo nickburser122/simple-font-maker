@@ -1,6 +1,7 @@
 import { SETS, type SetId } from '../charset/sets';
 import { PAPERS, type PaperId } from '../template/layout';
 import type { Pt } from '../vision/types';
+import { readMeta } from './meta';
 import { DEFAULT_SETTINGS } from './defaults';
 import type { Settings } from './settings.svelte';
 
@@ -36,6 +37,9 @@ export interface ProjectFile {
   paper: PaperId;
   family: string;
   designer: string;
+  copyright: string;
+  license: string;
+  fontVersion: string;
   settings: Settings;
   captures: FileCapture[];
 }
@@ -149,6 +153,7 @@ export function parseProjectFile(text: string): ProjectFile {
     paper: paper as PaperId,
     family: str(f.family),
     designer: str(f.designer),
+    ...readMeta(f),
     settings,
     captures: arr(f.captures).map(capture),
   };
