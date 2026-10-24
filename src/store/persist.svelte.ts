@@ -1,37 +1,16 @@
-import { SETS } from '../charset/sets';
 import type { CellResult } from '../vision/cells';
 import type { Pt } from '../vision/types';
-import type { SetId } from '../charset/sets';
-import type { PaperId } from '../template/layout';
 import { addFile, addRestored, captures, clearCaptures } from './captures.svelte';
 import { fontSettings } from './font.svelte';
 import { idbDelete, idbErase, idbGet, idbSet } from './idb';
 import { nav } from './nav.svelte';
 import { decodeBitmap, encodeBitmap } from './png';
 import { parseProjectFile, type ProjectFile } from './project-file';
+import { readSession, type IdbProject } from './session';
 import { project } from './project.svelte';
 import { loadSettings, resetSettings, settings, type Settings } from './settings.svelte';
 
 const KEY = 'project';
-
-interface IdbCapture {
-  uid: string;
-  name: string;
-  page: number;
-  corners: Pt[];
-  detected: boolean;
-  cells?: CellResult[];
-}
-
-interface IdbProject {
-  version: 1;
-  setId: SetId;
-  paper: PaperId;
-  family: string;
-  designer: string;
-  settings: Settings;
-  captures: IdbCapture[];
-}
 
 export const persistState = $state({ ready: false });
 
@@ -68,8 +47,8 @@ export async function saveSession(p: IdbProject | null): Promise<void> {
 
 export async function loadSession(): Promise<void> {
   try {
-    const p = await idbGet<IdbProject>(KEY);
-    if (p && p.version === 1 && p.setId in SETS) {
+    const p = readSession(await idbGet<unknown>(KEY));
+    if (p) {
       project.setId = p.setId;
       project.paper = p.paper;
       fontSettings.family = p.family;
