@@ -38,3 +38,8 @@ export const SETS: Record<SetId, CharSet> = {
 export function unicodeLabel(unicode: number): string {
   return 'U+' + unicode.toString(16).toUpperCase().padStart(4, '0');
 }
+
+export function missingChars(chars: readonly string[], ready: Iterable<number>): string[] {
+  const have = new Set(ready);
+  return chars.filter((c) => !have.has(c.codePointAt(0)!));
+}
