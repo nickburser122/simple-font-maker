@@ -24,6 +24,7 @@ export interface Settings {
   opttolerance: number;
   spacing: number;
   space: number;
+  kerning: number;
   alternates: boolean;
   glyphs: Record<number, GlyphAdjust>;
 }
@@ -88,6 +89,7 @@ export function buildSettings(): BuildSettings {
     lsb: SIDE_BEARING + settings.spacing,
     rsb: SIDE_BEARING + settings.spacing,
     space: settings.space,
+    kerning: settings.kerning / 100,
     trace: { turdsize: settings.turdsize, alphamax: settings.alphamax, opttolerance: settings.opttolerance },
   };
 }

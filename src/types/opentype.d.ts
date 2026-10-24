@@ -48,6 +48,7 @@ declare module 'opentype.js' {
     constructor(options: FontOptions);
     names: Record<string, Record<string, Record<string, string>>>;
     tables: Record<string, unknown>;
+    getKerningValue(left: Glyph, right: Glyph): number;
     numGlyphs: number;
     glyphs: { get(index: number): Glyph };
     charToGlyph(char: string): Glyph;

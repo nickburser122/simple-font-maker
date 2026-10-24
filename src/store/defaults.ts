@@ -12,6 +12,7 @@ export const DEFAULT_SETTINGS: Settings = {
   opttolerance: DEFAULT_TRACE.opttolerance,
   spacing: 0,
   space: SPACE_WIDTH,
+  kerning: 50,
   alternates: false,
   glyphs: {},
 };

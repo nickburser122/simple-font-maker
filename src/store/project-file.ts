@@ -122,9 +122,10 @@ export function parseProjectFile(text: string): ProjectFile {
   const paper = str(f.paper);
   if (!(setId in SETS) || !(paper in PAPERS)) throw new Error('not a project file');
   const s = rec(f.settings);
-  const settings: Settings = { ...DEFAULT_SETTINGS, glyphs: {} };
+  const settings: Settings = { ...DEFAULT_SETTINGS, kerning: 0, glyphs: {} };
   for (const k of ['threshold', 'alphamax', 'turdsize', 'opttolerance', 'spacing', 'space'] as const)
     if (k in s) settings[k] = num(s[k]);
+  if ('kerning' in s) settings.kerning = Math.max(0, Math.min(100, num(s.kerning)));
   if (typeof s.auto === 'boolean') settings.auto = s.auto;
   if (typeof s.adaptive === 'boolean') settings.adaptive = s.adaptive;
   if (typeof s.alternates === 'boolean') settings.alternates = s.alternates;

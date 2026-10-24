@@ -77,4 +77,14 @@ describe('project file', () => {
   ])('rejects %s', (_, text) => {
     expect(() => parseProjectFile(text)).toThrow('not a project file');
   });
+
+  it('reads kerning, clamps it, and treats older files as unkerned', () => {
+    const withK = (k: unknown) => JSON.stringify({ ...sample(), settings: { ...sample().settings, kerning: k } });
+    expect(parseProjectFile(withK(35)).settings.kerning).toBe(35);
+    expect(parseProjectFile(withK(500)).settings.kerning).toBe(100);
+    expect(() => parseProjectFile(withK('x'))).toThrow();
+    const old = JSON.parse(JSON.stringify(sample()));
+    delete old.settings.kerning;
+    expect(parseProjectFile(JSON.stringify(old)).settings.kerning).toBe(0);
+  });
 });

@@ -47,6 +47,7 @@ export function sanitizeSettings(v: unknown): Partial<Settings> {
   for (const k of ['threshold', 'alphamax', 'turdsize', 'opttolerance', 'spacing', 'space'] as const) {
     if (finite(v[k])) out[k] = v[k];
   }
+  if (finite(v.kerning)) out.kerning = Math.max(0, Math.min(100, v.kerning));
   for (const k of ['auto', 'adaptive', 'alternates'] as const) {
     if (typeof v[k] === 'boolean') out[k] = v[k];
   }
@@ -81,7 +82,7 @@ export function readSession(v: unknown): IdbProject | null {
     paper: v.paper as PaperId,
     family: typeof v.family === 'string' ? v.family : '',
     designer: typeof v.designer === 'string' ? v.designer : '',
-    settings: { ...structuredClone(DEFAULT_SETTINGS), ...sanitizeSettings(v.settings) },
+    settings: { ...structuredClone(DEFAULT_SETTINGS), kerning: 0, ...sanitizeSettings(v.settings) },
     captures: v.captures as IdbCapture[],
   };
 }

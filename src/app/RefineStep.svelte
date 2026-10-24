@@ -77,6 +77,7 @@
       <Range label="speck filter" bind:value={settings.turdsize} min={0} max={30} />
       <Range label="letter spacing" bind:value={settings.spacing} min={-40} max={100} />
       <Range label="space width" bind:value={settings.space} min={100} max={600} />
+      <Range label="kerning" bind:value={settings.kerning} min={0} max={100} />
     </div>
     <div class="actions">
       <button type="button" class="link" disabled={!historyState.canUndo} onclick={undo}>undo</button>

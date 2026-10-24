@@ -4,6 +4,9 @@ import type { Contour } from '../trace/path-parse';
 import { traceBitmap } from '../trace/potrace';
 import type { Tracer } from '../trace/cache';
 import { buildAlternateGsub, type AlternatePair } from './alternates';
+import { makeKernGpos, type KernClass } from './gpos';
+import { computeKerning, profileOf, type KernGlyph } from './kerning';
+import { withTables } from './sfnt';
 import { PPM } from '../vision/cells';
 import { ASCENDER, DESCENDER, UPM, mapContours, unitsPerPixel } from './metrics';
 
@@ -14,6 +17,7 @@ export interface BuildSettings {
   rsb: number;
   space: number;
   trace: TraceParams;
+  kerning?: number;
 }
 
 export interface GlyphImage {
@@ -94,6 +98,8 @@ export async function buildFont(
     new Glyph({ name: 'space', unicode: 32, advanceWidth: Math.round(s.space), path: new Path() }),
   ];
   const pairs: AlternatePair[] = [];
+  const kernGlyphs: KernGlyph[] = [];
+  const kernClasses: { glyphs: number[] }[] = [];
   const place = async (g: BuildGlyph, img: GlyphImage) => {
     const contours = await trace(img.bitmap, img.w, img.h, s.trace);
     if (contours.length === 0) return null;
@@ -120,6 +126,8 @@ export async function buildFont(
         }),
       );
       const base = out.length - 1;
+      kernGlyphs.push({ profile: profileOf(m.contours, Math.round(m.advance)) });
+      kernClasses.push({ glyphs: [base] });
       const a = g.alt ? await place(g, g.alt) : null;
       if (a) {
         out.push(
@@ -130,6 +138,7 @@ export async function buildFont(
           }),
         );
         pairs.push({ base, alt: out.length - 1 });
+        kernClasses[kernClasses.length - 1].glyphs.push(out.length - 1);
       }
     }
     onProgress?.(i + 1, sorted.length);
@@ -146,5 +155,11 @@ export async function buildFont(
   });
   const gsub = buildAlternateGsub(pairs);
   if (gsub) font.tables.gsub = gsub;
-  return { buffer: font.toArrayBuffer(), outlines };
+  let buffer = font.toArrayBuffer();
+  const strength = s.kerning ?? 0;
+  if (strength > 0 && kernGlyphs.length > 1) {
+    const gpos = makeKernGpos(computeKerning(kernGlyphs, strength), kernClasses as KernClass[]);
+    if (gpos) buffer = withTables(buffer, { GPOS: gpos });
+  }
+  return { buffer, outlines };
 }

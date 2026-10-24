@@ -104,3 +104,22 @@ describe('sanitizeSettings', () => {
     expect(out.glyphs![101]).toEqual({ dy: 1, scale: 2, lsb: null, rsb: null, missing: false, source: null });
   });
 });
+
+describe('kerning setting in sessions', () => {
+  it('treats sessions saved before kerning existed as unkerned', () => {
+    const s = session();
+    delete (s.settings as Record<string, unknown>).kerning;
+    expect(readSession(s)?.settings.kerning).toBe(0);
+  });
+
+  it('keeps a saved value, clamps it to 0-100 and ignores junk', () => {
+    expect(readSession(session({ settings: { ...DEFAULT_SETTINGS, kerning: 30 } }))?.settings.kerning).toBe(30);
+    expect(readSession(session({ settings: { ...DEFAULT_SETTINGS, kerning: 900 } }))?.settings.kerning).toBe(100);
+    expect(readSession(session({ settings: { ...DEFAULT_SETTINGS, kerning: -4 } }))?.settings.kerning).toBe(0);
+    expect(readSession(session({ settings: { ...DEFAULT_SETTINGS, kerning: 'lots' } }))?.settings.kerning).toBe(0);
+  });
+
+  it('starts new projects at 50', () => {
+    expect(DEFAULT_SETTINGS.kerning).toBe(50);
+  });
+});

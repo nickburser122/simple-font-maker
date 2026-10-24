@@ -46,6 +46,7 @@
       settings.opttolerance,
       settings.spacing,
       settings.space,
+      settings.kerning,
       $state.snapshot(settings.glyphs),
     ]);
     const t = setTimeout(rebuild, 120);
