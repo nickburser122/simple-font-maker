@@ -104,28 +104,30 @@ export function exportProject(): string {
     family: fontSettings.family,
     designer: fontSettings.designer,
     settings: $state.snapshot(settings) as Settings,
-    captures: captures.items.map((c) => ({
-      uid: c.uid,
-      name: c.name,
-      page: c.page,
-      corners: $state.snapshot(c.corners) as Pt[],
-      detected: c.detected,
-      cells: c.cells.map((cell) => ({
-        char: cell.char,
-        unicode: cell.unicode,
-        page: cell.page,
-        row: cell.row,
-        col: cell.col,
-        w: cell.w,
-        h: cell.h,
-        originX: cell.originX,
-        originY: cell.originY,
-        ink: cell.ink,
-        missing: cell.missing,
-        guides: { ...cell.guides },
-        png: encodeBitmap(cell.bitmap, cell.w, cell.h),
+    captures: captures.items
+      .filter((c) => c.status !== 'failed')
+      .map((c) => ({
+        uid: c.uid,
+        name: c.name,
+        page: c.page,
+        corners: $state.snapshot(c.corners) as Pt[],
+        detected: c.detected,
+        cells: c.cells.map((cell) => ({
+          char: cell.char,
+          unicode: cell.unicode,
+          page: cell.page,
+          row: cell.row,
+          col: cell.col,
+          w: cell.w,
+          h: cell.h,
+          originX: cell.originX,
+          originY: cell.originY,
+          ink: cell.ink,
+          missing: cell.missing,
+          guides: { ...cell.guides },
+          png: encodeBitmap(cell.bitmap, cell.w, cell.h),
+        })),
       })),
-    })),
   };
   return JSON.stringify(file);
 }

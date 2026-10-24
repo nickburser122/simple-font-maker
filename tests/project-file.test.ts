@@ -66,6 +66,9 @@ describe('project file', () => {
 
   it.each([
     ['not json', 'nope'],
+    ['oversized cell', JSON.stringify({ ...sample(), captures: [{ ...sample().captures[0], cells: [{ ...sample().captures[0].cells[0], w: 100000 }] }] })],
+    ['zero-size cell', JSON.stringify({ ...sample(), captures: [{ ...sample().captures[0], cells: [{ ...sample().captures[0].cells[0], h: 0 }] }] })],
+    ['fractional cell size', JSON.stringify({ ...sample(), captures: [{ ...sample().captures[0], cells: [{ ...sample().captures[0].cells[0], w: 10.5 }] }] })],
     ['wrong app', JSON.stringify({ ...sample(), app: 'other' })],
     ['wrong version', JSON.stringify({ ...sample(), version: 2 })],
     ['unknown set', JSON.stringify({ ...sample(), setId: 'huge' })],

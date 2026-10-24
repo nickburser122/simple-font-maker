@@ -52,6 +52,14 @@ function num(v: unknown): number {
   return v;
 }
 
+const MAX_DIM = 2000;
+
+function dim(v: unknown): number {
+  const n = num(v);
+  if (!Number.isInteger(n) || n < 1 || n > MAX_DIM) throw new Error('not a project file');
+  return n;
+}
+
 function str(v: unknown): string {
   if (typeof v !== 'string') throw new Error('not a project file');
   return v;
@@ -73,8 +81,8 @@ function cell(v: unknown): FileCell {
     page: num(c.page),
     row: num(c.row),
     col: num(c.col),
-    w: num(c.w),
-    h: num(c.h),
+    w: dim(c.w),
+    h: dim(c.h),
     originX: num(c.originX),
     originY: num(c.originY),
     ink: num(c.ink),

@@ -54,13 +54,19 @@ export function commitSettings(snapshot: Settings): void {
   sync();
 }
 
+function flush(): void {
+  hist.commit($state.snapshot(settings) as Settings);
+}
+
 export function undo(): void {
+  flush();
   const s = hist.undo();
   if (s) loadSettings(s);
   sync();
 }
 
 export function redo(): void {
+  flush();
   const s = hist.redo();
   if (s) loadSettings(s);
   sync();

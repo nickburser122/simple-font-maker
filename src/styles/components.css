@@ -543,8 +543,8 @@ input[type='range']::-moz-range-thumb {
 .tile {
   position: relative;
   aspect-ratio: 1;
-  background: #fff;
-  color: #161514;
+  background: var(--surface);
+  color: var(--surface-ink);
   border: 1px solid var(--hairline);
   padding: 0;
   overflow: hidden;
@@ -556,7 +556,7 @@ input[type='range']::-moz-range-thumb {
 
 .tile.missing {
   border-color: var(--accent);
-  background: color-mix(in srgb, #fff 94%, var(--accent));
+  background: color-mix(in srgb, var(--surface) 94%, var(--accent));
 }
 
 .tile svg {
@@ -575,7 +575,7 @@ input[type='range']::-moz-range-thumb {
 }
 
 .tile path {
-  fill: #161514;
+  fill: var(--surface-ink);
 }
 
 .tile .uni {
@@ -629,8 +629,16 @@ input[type='range']::-moz-range-thumb {
   flex-wrap: wrap;
 }
 
-.erase {
+.erase,
+.themes {
   display: flex;
   align-items: baseline;
   gap: 16px;
+}
+
+.tools {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 12px 32px;
 }

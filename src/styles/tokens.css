@@ -34,6 +34,8 @@
   --hairline: #d8d3c7;
   --accent: #d23f27;
   --guide: #8ec5f0;
+  --surface: #fff;
+  --surface-ink: #161514;
   --serif: 'Instrument Serif', 'Newsreader', Georgia, serif;
   --mono: 'IBM Plex Mono', ui-monospace, 'SFMono-Regular', Menlo, monospace;
   --gutter: 24px;
@@ -42,11 +44,29 @@
   color-scheme: light dark;
 }
 
+:root[data-theme='light'] {
+  color-scheme: light;
+}
+
 @media (prefers-color-scheme: dark) {
-  :root {
+  :root:not([data-theme='light']) {
     --paper: #121211;
     --ink: #e9e5da;
     --graphite: #8f8b82;
     --hairline: #2e2c28;
+    --accent: #ec5b42;
+    --surface: #1c1b19;
+    --surface-ink: #e9e5da;
   }
+}
+
+:root[data-theme='dark'] {
+  --paper: #121211;
+  --ink: #e9e5da;
+  --graphite: #8f8b82;
+  --hairline: #2e2c28;
+  --accent: #ec5b42;
+  --surface: #1c1b19;
+  --surface-ink: #e9e5da;
+  color-scheme: dark;
 }
