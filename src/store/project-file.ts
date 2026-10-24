@@ -127,6 +127,7 @@ export function parseProjectFile(text: string): ProjectFile {
     if (k in s) settings[k] = num(s[k]);
   if (typeof s.auto === 'boolean') settings.auto = s.auto;
   if (typeof s.adaptive === 'boolean') settings.adaptive = s.adaptive;
+  if (typeof s.alternates === 'boolean') settings.alternates = s.alternates;
   if (s.mode === 'blue' || s.mode === 'luma') settings.mode = s.mode;
   for (const [k, v] of Object.entries(rec(s.glyphs ?? {}))) {
     const g = rec(v);

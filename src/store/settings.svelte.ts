@@ -24,6 +24,7 @@ export interface Settings {
   opttolerance: number;
   spacing: number;
   space: number;
+  alternates: boolean;
   glyphs: Record<number, GlyphAdjust>;
 }
 

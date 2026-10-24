@@ -3,6 +3,7 @@ import type { TraceParams } from '../trace/params';
 import type { Contour } from '../trace/path-parse';
 import { traceBitmap } from '../trace/potrace';
 import type { Tracer } from '../trace/cache';
+import { buildAlternateGsub, type AlternatePair } from './alternates';
 import { PPM } from '../vision/cells';
 import { ASCENDER, DESCENDER, UPM, mapContours, unitsPerPixel } from './metrics';
 
@@ -15,12 +16,16 @@ export interface BuildSettings {
   trace: TraceParams;
 }
 
-export interface BuildGlyph {
-  unicode: number;
+export interface GlyphImage {
   w: number;
   h: number;
   baseline: number;
   bitmap: Uint8Array;
+}
+
+export interface BuildGlyph extends GlyphImage {
+  unicode: number;
+  alt?: GlyphImage;
   dy?: number;
   scale?: number;
   lsb?: number;
@@ -88,18 +93,23 @@ export async function buildFont(
     notdef(),
     new Glyph({ name: 'space', unicode: 32, advanceWidth: Math.round(s.space), path: new Path() }),
   ];
+  const pairs: AlternatePair[] = [];
+  const place = async (g: BuildGlyph, img: GlyphImage) => {
+    const contours = await trace(img.bitmap, img.w, img.h, s.trace);
+    if (contours.length === 0) return null;
+    return mapContours(contours, {
+      baseline: img.baseline,
+      unitsPerPx: upp,
+      lsb: g.lsb ?? s.lsb,
+      rsb: g.rsb ?? s.rsb,
+      dy: g.dy,
+      scale: g.scale,
+    });
+  };
   for (let i = 0; i < sorted.length; i++) {
     const g = sorted[i];
-    const contours = await trace(g.bitmap, g.w, g.h, s.trace);
-    if (contours.length > 0) {
-      const m = mapContours(contours, {
-        baseline: g.baseline,
-        unitsPerPx: upp,
-        lsb: g.lsb ?? s.lsb,
-        rsb: g.rsb ?? s.rsb,
-        dy: g.dy,
-        scale: g.scale,
-      });
+    const m = await place(g, g);
+    if (m) {
       outlines[g.unicode] = { d: toSvgPath(m.contours), advance: Math.round(m.advance) };
       out.push(
         new Glyph({
@@ -109,6 +119,18 @@ export async function buildFont(
           path: toPath(m.contours),
         }),
       );
+      const base = out.length - 1;
+      const a = g.alt ? await place(g, g.alt) : null;
+      if (a) {
+        out.push(
+          new Glyph({
+            name: `${glyphName(g.unicode)}.alt`,
+            advanceWidth: Math.round(a.advance),
+            path: toPath(a.contours),
+          }),
+        );
+        pairs.push({ base, alt: out.length - 1 });
+      }
     }
     onProgress?.(i + 1, sorted.length);
   }
@@ -122,5 +144,7 @@ export async function buildFont(
     version: 'Version 1.000',
     glyphs: out,
   });
+  const gsub = buildAlternateGsub(pairs);
+  if (gsub) font.tables.gsub = gsub;
   return { buffer: font.toArrayBuffer(), outlines };
 }

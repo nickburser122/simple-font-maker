@@ -25,6 +25,19 @@ export function chosenFor(u: number): Source | null {
   return list.find((s) => s.id === want) ?? list[0] ?? null;
 }
 
+export function altFor(u: number): Source | null {
+  const chosen = chosenFor(u);
+  return sourcesFor(u).find((s) => s.id !== chosen?.id) ?? null;
+}
+
+export function alternateCount(): number {
+  const unicodes = new Set<number>();
+  for (const it of captures.items) for (const c of it.cells) if (!c.missing) unicodes.add(c.unicode);
+  let n = 0;
+  for (const u of unicodes) if (!settings.glyphs[u]?.missing && altFor(u)) n++;
+  return n;
+}
+
 export function collectGlyphs(): BuildGlyph[] {
   const unicodes = new Set<number>();
   for (const it of captures.items) for (const c of it.cells) if (!c.missing) unicodes.add(c.unicode);
@@ -34,12 +47,16 @@ export function collectGlyphs(): BuildGlyph[] {
     if (a?.missing) continue;
     const s = chosenFor(u);
     if (!s) continue;
+    const alt = settings.alternates ? altFor(u) : null;
     out.push({
       unicode: u,
       w: s.cell.w,
       h: s.cell.h,
       baseline: s.cell.guides.baseline,
       bitmap: s.cell.bitmap,
+      alt: alt
+        ? { w: alt.cell.w, h: alt.cell.h, baseline: alt.cell.guides.baseline, bitmap: alt.cell.bitmap }
+        : undefined,
       dy: a?.dy,
       scale: a?.scale,
       lsb: a?.lsb ?? undefined,

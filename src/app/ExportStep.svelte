@@ -3,7 +3,7 @@
   import { toWoff, woffSupported } from '../font/woff';
   import { project } from '../store/project.svelte';
   import { fontSettings } from '../store/font.svelte';
-  import { buildSettings } from '../store/settings.svelte';
+  import { buildSettings, settings } from '../store/settings.svelte';
   import { collectGlyphs } from '../store/glyphs';
   import { build } from '../worker/client';
   import { exportProject, importProject, projectFileName } from '../store/persist.svelte';
@@ -11,6 +11,7 @@
   const glyphs = $derived(collectGlyphs());
   const total = $derived(SETS[project.setId].chars.length);
   const missing = $derived(missingChars(SETS[project.setId].chars, glyphs.map((g) => g.unicode)));
+  const altCount = $derived(glyphs.filter((g) => g.alt).length);
   const SHOWN = 24;
   const canWoff = woffSupported();
   let busy = $state(false);
@@ -77,7 +78,7 @@
       <span class="meta">designer (optional)</span>
       <input type="text" bind:value={fontSettings.designer} maxlength="64" spellcheck="false" />
     </label>
-    <p class="meta count">{glyphs.length} of {total} glyphs ready. missing ones are left out.</p>
+    <p class="meta count">{glyphs.length} of {total} glyphs ready. missing ones are left out.{settings.alternates && altCount > 0 ? ` ${altCount} have an alternate shape.` : ''}</p>
     {#if missing.length > 0}
       <p class="meta missing" aria-label="glyphs not in the font">
         left out: {missing.slice(0, SHOWN).join(' ')}{missing.length > SHOWN ? ` +${missing.length - SHOWN} more` : ''}

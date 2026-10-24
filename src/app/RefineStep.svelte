@@ -3,7 +3,7 @@
   import { project } from '../store/project.svelte';
   import { preview } from '../store/preview.svelte';
   import { historyState, redo, settings, undo } from '../store/settings.svelte';
-  import { chosenFor, sourcesFor } from '../store/glyphs';
+  import { alternateCount, chosenFor, sourcesFor } from '../store/glyphs';
   import ExtractControls from './ExtractControls.svelte';
   import GlyphPanel from './GlyphPanel.svelte';
   import GlyphTile from './GlyphTile.svelte';
@@ -51,6 +51,7 @@
   }
 
   const chars = $derived(SETS[project.setId].chars);
+  const alts = $derived(alternateCount());
   const found = $derived(chars.filter((c) => sourcesFor(c.codePointAt(0)!).length > 0 && !settings.glyphs[c.codePointAt(0)!]?.missing).length);
 
   function onkey(e: KeyboardEvent): void {
@@ -81,7 +82,21 @@
       <button type="button" class="link" disabled={!historyState.canUndo} onclick={undo}>undo</button>
       <button type="button" class="link" disabled={!historyState.canRedo} onclick={redo}>redo</button>
       <button type="button" class="toggle" aria-pressed={showSource} onclick={() => (showSource = !showSource)}>source bitmaps</button>
+      <button
+        type="button"
+        class="toggle"
+        aria-pressed={settings.alternates}
+        disabled={alts === 0 && !settings.alternates}
+        onclick={() => (settings.alternates = !settings.alternates)}>alternate shapes</button
+      >
       <span class="meta">{found} of {chars.length} glyphs found. missing ones are marked in red.</span>
+      <span class="meta">
+        {#if alts > 0}
+          {alts} {alts === 1 ? 'glyph has' : 'glyphs have'} a second sample{settings.alternates ? ', used as an alternate' : ''}.
+        {:else}
+          photograph a page twice to give letters a second shape.
+        {/if}
+      </span>
     </div>
   </div>
 
