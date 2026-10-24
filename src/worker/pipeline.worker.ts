@@ -1,4 +1,6 @@
 import { buildFont } from '../font/build';
+import { createTraceCache } from '../trace/cache';
+import { traceBitmap } from '../trace/potrace';
 import { sliceCells } from '../vision/cells';
 import { findCorners, pageRaster } from '../vision/pipeline';
 import type { Pt, Raster } from '../vision/types';
@@ -12,6 +14,7 @@ const ctx = self as unknown as {
 const MAX_SIDE = 3000;
 const rasters = new Map<number, Raster>();
 const pages = new Map<number, { key: string; raster: Raster }>();
+const tracer = createTraceCache(traceBitmap);
 
 async function handle(m: Req): Promise<void> {
   if (m.type === 'load') {
@@ -46,8 +49,12 @@ async function handle(m: Req): Promise<void> {
       cells.map((c) => c.bitmap.buffer as ArrayBuffer),
     );
   } else if (m.type === 'build') {
-    const { buffer, outlines } = await buildFont(m.glyphs, m.settings, undefined, (done, total) =>
-      ctx.postMessage({ type: 'progress', rid: m.rid, done, total }),
+    const { buffer, outlines } = await buildFont(
+      m.glyphs,
+      m.settings,
+      undefined,
+      (done, total) => ctx.postMessage({ type: 'progress', rid: m.rid, done, total }),
+      tracer,
     );
     ctx.postMessage({ type: 'font', rid: m.rid, buffer, outlines }, [buffer]);
   } else {

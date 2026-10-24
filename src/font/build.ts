@@ -2,6 +2,7 @@ import { Font, Glyph, Path } from 'opentype.js';
 import type { TraceParams } from '../trace/params';
 import type { Contour } from '../trace/path-parse';
 import { traceBitmap } from '../trace/potrace';
+import type { Tracer } from '../trace/cache';
 import { PPM } from '../vision/cells';
 import { ASCENDER, DESCENDER, UPM, mapContours, unitsPerPixel } from './metrics';
 
@@ -78,6 +79,7 @@ export async function buildFont(
   s: BuildSettings,
   ppm: number = PPM,
   onProgress?: (done: number, total: number) => void,
+  trace: Tracer = traceBitmap,
 ): Promise<{ buffer: ArrayBuffer; outlines: Outlines }> {
   const sorted = glyphs.filter((g) => g.unicode !== 32).sort((a, b) => a.unicode - b.unicode);
   const upp = unitsPerPixel(ppm);
@@ -88,7 +90,7 @@ export async function buildFont(
   ];
   for (let i = 0; i < sorted.length; i++) {
     const g = sorted[i];
-    const contours = await traceBitmap(g.bitmap, g.w, g.h, s.trace);
+    const contours = await trace(g.bitmap, g.w, g.h, s.trace);
     if (contours.length > 0) {
       const m = mapContours(contours, {
         baseline: g.baseline,
