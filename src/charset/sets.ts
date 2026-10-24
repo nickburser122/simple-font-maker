@@ -1,4 +1,4 @@
-export type SetId = 'basic' | 'extended';
+export type SetId = 'basic' | 'extended' | 'latin';
 
 export interface CharSpec {
   char: string;
@@ -17,6 +17,12 @@ const BASIC = [
 
 const EXTRA = [...';:/@#%+=*_[]<>$€', '“', '”', '‘', '’'];
 
+const ACCENTS = [
+  ...'ÀÁÂÃÄÅÆÇÈÉÊËÌÍÎÏÑÒÓÔÕÖØÙÚÛÜÝ',
+  ...'àáâãäåæçèéêëìíîïñòóôõöøùúûüýÿ',
+  ...'ßœŒ¿¡«»–—…',
+];
+
 export interface CharSet {
   id: SetId;
   label: string;
@@ -26,6 +32,7 @@ export interface CharSet {
 export const SETS: Record<SetId, CharSet> = {
   basic: { id: 'basic', label: 'Basic', chars: BASIC },
   extended: { id: 'extended', label: 'Extended', chars: [...BASIC, ...EXTRA] },
+  latin: { id: 'latin', label: 'Latin', chars: [...BASIC, ...EXTRA, ...ACCENTS] },
 };
 
 export function unicodeLabel(unicode: number): string {

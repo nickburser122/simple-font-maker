@@ -23,6 +23,24 @@ describe('character sets', () => {
     expect(SETS.extended.chars).toHaveLength(92);
     expect(new Set(SETS.extended.chars).size).toBe(92);
   });
+
+  it('latin adds 67 accented letters and punctuation without duplicates', () => {
+    expect(SETS.latin.chars).toHaveLength(159);
+    expect(new Set(SETS.latin.chars).size).toBe(159);
+    expect(SETS.latin.chars.slice(0, 92)).toEqual([...SETS.extended.chars]);
+    for (const c of 'éèñüçÅßœ¿') expect(SETS.latin.chars).toContain(c);
+  });
+
+  it.each(papers)('latin keeps the extended placements unchanged on %s', (paper) => {
+    const a = placeChars(SETS.extended.chars, paper);
+    const b = placeChars(SETS.latin.chars, paper).slice(0, a.length);
+    expect(b).toEqual(a);
+  });
+
+  it('latin needs two A4 pages and three Letter pages', () => {
+    expect(pageCount(SETS.latin.chars.length, 'a4')).toBe(2);
+    expect(pageCount(SETS.latin.chars.length, 'letter')).toBe(3);
+  });
 });
 
 describe('layout', () => {
@@ -81,7 +99,7 @@ describe('svg rendering', () => {
   });
 
   it.each(papers)('renders one well-formed svg per page on %s', (paper) => {
-    for (const setId of ['basic', 'extended'] as const) {
+    for (const setId of ['basic', 'extended', 'latin'] as const) {
       const pages = renderAllPages(setId, paper);
       expect(pages).toHaveLength(pageCount(SETS[setId].chars.length, paper));
       for (const svg of pages) {

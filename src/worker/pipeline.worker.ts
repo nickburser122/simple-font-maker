@@ -2,6 +2,7 @@ import { buildFont } from '../font/build';
 import { createTraceCache } from '../trace/cache';
 import { traceBitmap } from '../trace/potrace';
 import { sliceCells } from '../vision/cells';
+import { decodePageCode } from '../vision/pagecode';
 import { findCorners, pageRaster } from '../vision/pipeline';
 import type { Pt, Raster } from '../vision/types';
 import type { Req, Res } from './messages';
@@ -45,7 +46,13 @@ async function handle(m: Req): Promise<void> {
     }
     const cells = sliceCells(cached.raster, m.setId, m.paper, m.page, m.opts);
     ctx.postMessage(
-      { type: 'cells', rid: m.rid, cells, lowInk: cells.every((c) => c.missing) },
+      {
+        type: 'cells',
+        rid: m.rid,
+        cells,
+        lowInk: cells.every((c) => c.missing),
+        pageCode: decodePageCode(cached.raster, m.paper),
+      },
       cells.map((c) => c.bitmap.buffer as ArrayBuffer),
     );
   } else if (m.type === 'build') {

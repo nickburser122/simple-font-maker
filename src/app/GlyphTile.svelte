@@ -38,7 +38,7 @@
   onclick={onselect}
 >
   <span class="uni">{unicodeLabel(unicode)}</span>
-  <svg viewBox="0 -820 1100 1100" aria-hidden="true">
+  <svg viewBox="0 -960 1100 1260" aria-hidden="true">
     <line x1="0" x2="1100" y1="0" y2="0" class="g base" />
     <line x1="0" x2="1100" y1={-X_HEIGHT} y2={-X_HEIGHT} class="g" />
     <line x1="0" x2="1100" y1={-CAP_HEIGHT} y2={-CAP_HEIGHT} class="g" />

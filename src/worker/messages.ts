@@ -21,7 +21,7 @@ export type Req =
 
 export type Res =
   | { type: 'loaded'; rid: number; corners: Pt[] | null }
-  | { type: 'cells'; rid: number; cells: CellResult[]; lowInk: boolean }
+  | { type: 'cells'; rid: number; cells: CellResult[]; lowInk: boolean; pageCode: number | null }
   | { type: 'released'; rid: number }
   | { type: 'progress'; rid: number; done: number; total: number }
   | { type: 'font'; rid: number; buffer: ArrayBuffer; outlines: Outlines }

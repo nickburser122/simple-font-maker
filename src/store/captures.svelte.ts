@@ -16,6 +16,7 @@ export interface Capture {
   page: number;
   corners: Pt[];
   detected: boolean;
+  autoPage: boolean;
   status: 'loading' | 'ready' | 'working' | 'failed';
   cells: CellResult[];
   lowInk: boolean;
@@ -68,6 +69,15 @@ export async function run(id: number): Promise<void> {
     });
     const cur = find(id);
     if (cur && tokens.get(id) === token) {
+      if (cur.autoPage) {
+        cur.autoPage = false;
+        const total = pageCount(SETS[project.setId].chars.length, project.paper);
+        if (res.pageCode !== null && res.pageCode <= total && res.pageCode !== cur.page) {
+          cur.page = res.pageCode;
+          void run(id);
+          return;
+        }
+      }
       cur.cells = res.cells;
       cur.lowInk = res.lowInk;
       cur.error = '';
@@ -106,6 +116,7 @@ export async function addFile(file: Blob, init: AddInit = {}): Promise<void> {
     page,
     corners: (init.corners ?? fallback).map((p) => [...p] as Pt),
     detected: init.detected ?? false,
+    autoPage: init.page === undefined,
     status: 'loading',
     cells: [],
     lowInk: false,
@@ -121,6 +132,7 @@ export async function addFile(file: Blob, init: AddInit = {}): Promise<void> {
       it.corners = res.corners;
       it.detected = true;
     }
+    if (!it.detected) it.autoPage = false;
     it.status = 'ready';
     await run(id);
   } catch (e) {
@@ -142,6 +154,7 @@ export function addRestored(init: Required<AddInit> & { cells: CellResult[] }): 
     page: init.page,
     corners: init.corners.map((p) => [...p] as Pt),
     detected: init.detected,
+    autoPage: false,
     status: 'ready',
     cells: init.cells,
     lowInk: false,
@@ -163,6 +176,7 @@ export function setPage(id: number, page: number): void {
   const it = find(id);
   if (!it) return;
   it.page = page;
+  it.autoPage = false;
   void run(id);
 }
 
@@ -170,6 +184,7 @@ export function cornersMoved(id: number): void {
   const it = find(id);
   if (!it) return;
   it.detected = false;
+  it.autoPage = false;
   void run(id);
 }
 

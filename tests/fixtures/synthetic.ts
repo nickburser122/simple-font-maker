@@ -9,6 +9,7 @@ import {
   placeChars,
   type PaperId,
 } from '../../src/template/layout';
+import { litRects } from '../../src/template/pagecode';
 import { applyH, computeHomography } from '../../src/vision/homography';
 import type { Pt, Raster } from '../../src/vision/types';
 
@@ -119,6 +120,8 @@ export function renderPageRaster(
     if (i === 0)
       rect(r.x + (r.w - MARKER.hole) / 2, r.y + (r.h - MARKER.hole) / 2, MARKER.hole, MARKER.hole, [255, 255, 255]);
   });
+
+  for (const r of litRects(paper, page)) rect(r.x, r.y, r.w, r.h, [0, 0, 0]);
 
   for (const s of placeChars(SETS[setId].chars, paper).filter((c) => c.page === page)) {
     const c = cellRect(paper, s.row, s.col);

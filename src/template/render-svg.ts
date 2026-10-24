@@ -11,6 +11,7 @@ import {
   placeChars,
   type PaperId,
 } from './layout';
+import { litRects } from './pagecode';
 
 export const DROPOUT = '#8EC5F0';
 const MONO = "ui-monospace, Menlo, Consolas, 'Courier New', monospace";
@@ -51,6 +52,9 @@ export function renderPageSvg(setId: SetId, paper: PaperId, page: number): strin
   );
 
   for (let i = 0; i < 4; i++) out.push(markerSvg(i, paper));
+  for (const r of litRects(paper, page)) {
+    out.push(`<rect x="${n(r.x)}" y="${n(r.y)}" width="${r.w}" height="${r.h}" fill="#000"/>`);
+  }
 
   const tx = MARKER.inset + MARKER.size + 3;
   out.push(
