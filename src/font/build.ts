@@ -7,6 +7,8 @@ import { MAX_ALTS, buildAlternateGsub, type AlternateSet } from './alternates';
 import { makeKernGpos, type KernClass } from './gpos';
 import { computeKerning, profileOf, type KernGlyph } from './kerning';
 import { withTables } from './sfnt';
+import { exactXMin, setLeftBearings } from './hmtx';
+import { toTrueType } from './truetype';
 import { tuneVerticalMetrics } from './vertical';
 import { PPM } from '../vision/cells';
 import { ASCENDER, DESCENDER, UPM, mapContours, unitsPerPixel } from './metrics';
@@ -22,6 +24,7 @@ export interface BuildSettings {
   copyright?: string;
   license?: string;
   version?: string;
+  format?: 'otf' | 'ttf';
 }
 
 export interface GlyphImage {
@@ -72,19 +75,27 @@ export function toPath(contours: Contour[]): Path {
   return p;
 }
 
+const NOTDEF: Contour[] = [
+  {
+    start: [50, 0],
+    segs: [
+      { t: 'L', p: [450, 0] },
+      { t: 'L', p: [450, 700] },
+      { t: 'L', p: [50, 700] },
+    ],
+  },
+  {
+    start: [100, 50],
+    segs: [
+      { t: 'L', p: [100, 650] },
+      { t: 'L', p: [400, 650] },
+      { t: 'L', p: [400, 50] },
+    ],
+  },
+];
+
 function notdef(): Glyph {
-  const p = new Path();
-  p.moveTo(50, 0);
-  p.lineTo(450, 0);
-  p.lineTo(450, 700);
-  p.lineTo(50, 700);
-  p.close();
-  p.moveTo(100, 50);
-  p.lineTo(100, 650);
-  p.lineTo(400, 650);
-  p.lineTo(400, 50);
-  p.close();
-  return new Glyph({ name: '.notdef', unicode: 0, advanceWidth: 500, path: p });
+  return new Glyph({ name: '.notdef', unicode: 0, advanceWidth: 500, path: toPath(NOTDEF) });
 }
 
 export async function buildFont(
@@ -101,6 +112,7 @@ export async function buildFont(
     notdef(),
     new Glyph({ name: 'space', unicode: 32, advanceWidth: Math.round(s.space), path: new Path() }),
   ];
+  const shapes: Contour[][] = [NOTDEF, []];
   const sets: AlternateSet[] = [];
   const kernGlyphs: KernGlyph[] = [];
   const kernClasses: { glyphs: number[] }[] = [];
@@ -130,6 +142,7 @@ export async function buildFont(
         }),
       );
       const base = out.length - 1;
+      shapes.push(m.contours);
       kernGlyphs.push({ profile: profileOf(m.contours, Math.round(m.advance)) });
       kernClasses.push({ glyphs: [base] });
       const made: number[] = [];
@@ -143,6 +156,7 @@ export async function buildFont(
             path: toPath(a.contours),
           }),
         );
+        shapes.push(a.contours);
         made.push(out.length - 1);
         kernClasses[kernClasses.length - 1].glyphs.push(out.length - 1);
       }
@@ -170,5 +184,8 @@ export async function buildFont(
     const gpos = makeKernGpos(computeKerning(kernGlyphs, strength), kernClasses as KernClass[]);
     if (gpos) buffer = withTables(buffer, { GPOS: gpos });
   }
-  return { buffer: tuneVerticalMetrics(buffer, ASCENDER, DESCENDER), outlines };
+  const tuned = tuneVerticalMetrics(buffer, ASCENDER, DESCENDER);
+  const finished =
+    s.format === 'ttf' ? toTrueType(tuned, shapes) : setLeftBearings(tuned, shapes.map((c) => exactXMin(c) ?? 0));
+  return { buffer: finished, outlines };
 }

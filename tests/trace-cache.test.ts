@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { buildFont, type BuildGlyph, type BuildSettings } from '../src/font/build';
 import { createTraceCache, hashBitmap, type Tracer } from '../src/trace/cache';
 import { DEFAULT_TRACE } from '../src/trace/params';
+import { sameFont } from './fonts';
 import { traceBitmap } from '../src/trace/potrace';
 import type { Contour } from '../src/trace/path-parse';
 
@@ -22,11 +23,6 @@ function bmp(seed: number, len = 64): Uint8Array {
   return b;
 }
 
-function sameBytes(a: ArrayBuffer, b: ArrayBuffer): boolean {
-  const x = new Uint8Array(a);
-  const y = new Uint8Array(b);
-  return x.length === y.length && x.every((v, i) => v === y[i]);
-}
 
 describe('hashBitmap', () => {
   it('is stable and sensitive to single-pixel changes', () => {
@@ -129,7 +125,7 @@ describe('buildFont with a cached tracer', () => {
     const second = await buildFont(glyphs(), settings, undefined, undefined, cache);
     expect(afterFirst).toBe(3);
     expect(real).toBe(3);
-    expect(sameBytes(second.buffer, first.buffer)).toBe(true);
+    expect(sameFont(second.buffer, first.buffer)).toBe(true);
     expect(second.outlines).toEqual(first.outlines);
   });
 
@@ -137,7 +133,7 @@ describe('buildFont with a cached tracer', () => {
     const cache = createTraceCache(traceBitmap);
     const cached = await buildFont(glyphs(), settings, undefined, undefined, cache);
     const plain = await buildFont(glyphs(), settings);
-    expect(sameBytes(cached.buffer, plain.buffer)).toBe(true);
+    expect(sameFont(cached.buffer, plain.buffer)).toBe(true);
   });
 
   it('does not reuse a trace after smoothing settings change', async () => {

@@ -3,6 +3,7 @@ import { parse } from 'opentype.js';
 import { buildAlternateGsub } from '../src/font/alternates';
 import { buildFont, type BuildGlyph, type BuildSettings, type GlyphImage } from '../src/font/build';
 import { DEFAULT_TRACE } from '../src/trace/params';
+import { sameFont } from './fonts';
 import { captures, type Capture } from '../src/store/captures.svelte';
 import { alternateCount, altsFor, chosenFor, collectGlyphs, sourceLabel, sourcesFor } from '../src/store/glyphs';
 import { resetSettings, settings } from '../src/store/settings.svelte';
@@ -113,7 +114,7 @@ describe('buildFont with alternates', () => {
   it('is byte-identical for glyphs without alternates', async () => {
     const a = await buildFont([{ unicode: 97, ...img(30) }], settingsB);
     const b = await buildFont([{ unicode: 97, ...img(30), alts: undefined }], settingsB);
-    expect(new Uint8Array(a.buffer)).toEqual(new Uint8Array(b.buffer));
+    expect(sameFont(a.buffer, b.buffer)).toBe(true);
   });
 });
 

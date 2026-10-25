@@ -1,6 +1,7 @@
 <script lang="ts">
   import { SETS, missingChars } from '../charset/sets';
   import { toWoff, woffSupported } from '../font/woff';
+  import { toWoff2 } from '../font/woff2';
   import { project } from '../store/project.svelte';
   import { fontSettings } from '../store/font.svelte';
   import { buildSettings, settings } from '../store/settings.svelte';
@@ -40,21 +41,26 @@
     if (input) input.value = '';
   }
 
-  function fileName(family: string, ext: 'otf' | 'woff'): string {
+  type Format = 'otf' | 'ttf' | 'woff' | 'woff2';
+  const MIME: Record<Format, string> = { otf: 'font/otf', ttf: 'font/ttf', woff: 'font/woff', woff2: 'font/woff2' };
+
+  function fileName(family: string, ext: Format): string {
     const base = family.replace(/[\\/:*?"<>|]+/g, '').trim().replace(/\s+/g, '-') || 'Handwriting';
     return `${base}-Regular.${ext}`;
   }
 
-  async function download(format: 'otf' | 'woff'): Promise<void> {
+  async function download(format: Format): Promise<void> {
     busy = true;
     error = '';
     status = '';
     try {
-      const { buffer: buf } = await build(glyphs, buildSettings(), (d, t) => (status = `tracing ${d}/${t}`));
+      const request = { ...buildSettings(), format: format === 'ttf' ? ('ttf' as const) : ('otf' as const) };
+      const { buffer: buf } = await build(glyphs, request, (d, t) => (status = `tracing ${d}/${t}`));
       const name = fileName(fontSettings.family, format);
-      const data = format === 'woff' ? await toWoff(buf) : buf;
+      if (format === 'woff' || format === 'woff2') status = 'compressing';
+      const data = format === 'woff' ? await toWoff(buf) : format === 'woff2' ? await toWoff2(buf) : buf;
       const a = document.createElement('a');
-      a.href = URL.createObjectURL(new Blob([data], { type: format === 'woff' ? 'font/woff' : 'font/otf' }));
+      a.href = URL.createObjectURL(new Blob([data], { type: MIME[format] }));
       a.download = name;
       a.click();
       setTimeout(() => URL.revokeObjectURL(a.href), 1000);
@@ -101,11 +107,17 @@
     <button type="button" class="primary" disabled={busy || glyphs.length === 0} onclick={() => download('otf')}>
       download .otf
     </button>
+    <button type="button" class="link" disabled={busy || glyphs.length === 0} onclick={() => download('ttf')}>
+      download .ttf
+    </button>
     {#if canWoff}
       <button type="button" class="link" disabled={busy || glyphs.length === 0} onclick={() => download('woff')}>
         download .woff
       </button>
     {/if}
+    <button type="button" class="link" disabled={busy || glyphs.length === 0} onclick={() => download('woff2')}>
+      download .woff2
+    </button>
     <button type="button" class="link" onclick={saveFile}>save project</button>
     <input type="file" accept=".fontproject,application/json" hidden bind:this={input} onchange={openFile} />
     <button type="button" class="link" onclick={() => input?.click()}>open project</button>

@@ -47,7 +47,7 @@ async function go(page: Page, step: string): Promise<void> {
 }
 
 async function downloaded(page: Page, label: string): Promise<Buffer> {
-  const [dl] = await Promise.all([page.waitForEvent('download'), page.getByRole('button', { name: label }).click()]);
+  const [dl] = await Promise.all([page.waitForEvent('download'), page.getByRole('button', { name: label, exact: true }).click()]);
   return readFileSync(await dl.path());
 }
 
@@ -102,6 +102,13 @@ test('basic sheet to downloadable fonts', async ({ page, context }) => {
   const woff = await downloaded(page, 'download .woff');
   expect(tag(woff, 0)).toBe('wOFF');
   expect(woff.length).toBeLessThan(otf.length);
+  const woff2 = await downloaded(page, 'download .woff2');
+  expect(tag(woff2, 0)).toBe('wOF2');
+  expect(woff2.length).toBeLessThan(woff.length);
+  const ttf = await downloaded(page, 'download .ttf');
+  expect(ttf.readUInt32BE(0)).toBe(0x00010000);
+  expect(tables(ttf)).toEqual(expect.arrayContaining(['glyf', 'loca', 'GPOS']));
+  expect(tables(ttf)).not.toContain('CFF ');
 });
 
 test('a missing sheet lists what will be left out', async ({ page, context }) => {

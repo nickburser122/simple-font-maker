@@ -26,6 +26,7 @@ declare module 'opentype.js' {
 
   export class Glyph {
     constructor(options: GlyphOptions);
+    index: number;
     name: string;
     unicode?: number;
     advanceWidth: number;
@@ -52,6 +53,7 @@ declare module 'opentype.js' {
     tables: Record<string, unknown>;
     getKerningValue(left: Glyph, right: Glyph): number;
     numGlyphs: number;
+    outlinesFormat: string;
     glyphs: { get(index: number): Glyph };
     charToGlyph(char: string): Glyph;
     toArrayBuffer(): ArrayBuffer;
