@@ -43,7 +43,7 @@
   }
 </script>
 
-<div class="editor" role="group" aria-label="sheet corners" bind:this={box} onpointermove={move} onpointerup={up}>
+<div class="editor" role="group" aria-label="sheet corners" bind:this={box} onpointermove={move} onpointerup={up} onpointercancel={up}>
   <img src={url} alt="the photographed sheet" draggable="false" />
   <svg viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
     <polygon points={corners.map(([x, y]) => `${x * 100},${y * 100}`).join(' ')} />

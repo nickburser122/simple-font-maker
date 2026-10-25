@@ -139,8 +139,9 @@
 .actions {
   grid-column: 1 / -1;
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
-  gap: 28px;
+  gap: 14px 28px;
 }
 
 .primary {
@@ -179,6 +180,7 @@
 
 .tpl {
   display: grid;
+  grid-template-columns: minmax(0, 1fr);
   gap: 28px;
 }
 
@@ -395,6 +397,7 @@ input[type='range']::-moz-range-thumb {
   font-size: 8px;
   letter-spacing: 0.04em;
   cursor: grab;
+  touch-action: none;
 }
 
 .cells {
@@ -658,4 +661,55 @@ input[type='range']::-moz-range-thumb {
   align-items: baseline;
   flex-wrap: wrap;
   gap: 12px 32px;
+}
+
+@media (pointer: coarse) {
+  .toggle,
+  .link,
+  .stepbtn {
+    position: relative;
+  }
+
+  .handle {
+    position: absolute;
+    width: 28px;
+    height: 28px;
+  }
+
+  .toggle::after,
+  .link::after,
+  .stepbtn::after,
+  .handle::after {
+    content: '';
+    position: absolute;
+    inset: -10px -8px;
+  }
+
+  .primary {
+    min-height: 44px;
+  }
+
+  .field input {
+    padding: 10px 0;
+  }
+
+  input[type='range'] {
+    height: 28px;
+    margin: 0;
+    background: linear-gradient(var(--ink), var(--ink)) center / 100% 1px no-repeat;
+  }
+
+  input[type='range']:disabled {
+    opacity: 0.35;
+  }
+
+  input[type='range']::-webkit-slider-thumb {
+    width: 20px;
+    height: 20px;
+  }
+
+  input[type='range']::-moz-range-thumb {
+    width: 20px;
+    height: 20px;
+  }
 }
