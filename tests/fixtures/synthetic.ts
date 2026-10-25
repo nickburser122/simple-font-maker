@@ -89,6 +89,7 @@ export function renderPageRaster(
   page: number,
   ppm: number,
   blank: Set<number>,
+  ink: readonly number[] = INK,
 ): Raster {
   const p = PAPERS[paper];
   const w = Math.round(p.w * ppm);
@@ -112,7 +113,7 @@ export function renderPageRaster(
     const y1 = Math.ceil((oy + Math.max(s[1], s[3]) + PEN) * ppm);
     for (let j = y0; j < y1; j++)
       for (let i = x0; i < x1; i++)
-        if (distSeg((i + 0.5) / ppm - ox, (j + 0.5) / ppm - oy, s) <= PEN / 2) paint(i, j, INK);
+        if (distSeg((i + 0.5) / ppm - ox, (j + 0.5) / ppm - oy, s) <= PEN / 2) paint(i, j, ink as number[]);
   };
 
   markerRects(paper).forEach((r, i) => {
@@ -143,6 +144,9 @@ export interface PhotoOpts {
   light: number;
   noise: number;
   seed: number;
+  blur?: number;
+  shadow?: { x0: number; y0: number; x1: number; y1: number; strength: number };
+  glare?: { x: number; y: number; r: number; gain: number };
 }
 
 function pageCornersMm(paper: PaperId): Pt[] {
@@ -188,7 +192,61 @@ export function photographPage(page: Raster, paper: PaperId, ppm: number, o: Pho
       }
     }
   }
-  return { w: o.w, h: o.h, data };
+  const photo: Raster = { w: o.w, h: o.h, data };
+  if (o.shadow) applyShadow(photo, o.shadow);
+  if (o.glare) applyGlare(photo, o.glare);
+  if (o.blur && o.blur > 0) boxBlur(photo, o.blur);
+  return photo;
+}
+
+function applyShadow(r: Raster, sh: NonNullable<PhotoOpts['shadow']>): void {
+  const dx = sh.x1 - sh.x0;
+  const dy = sh.y1 - sh.y0;
+  const len = Math.hypot(dx, dy) || 1;
+  for (let j = 0; j < r.h; j++) {
+    for (let i = 0; i < r.w; i++) {
+      const d = ((i / r.w - sh.x0) * dx + (j / r.h - sh.y0) * dy) / len / len;
+      const t = Math.min(1, Math.max(0, d * 6 + 0.5));
+      const f = 1 - sh.strength * t * t * (3 - 2 * t);
+      const o = (j * r.w + i) * 4;
+      for (let c = 0; c < 3; c++) r.data[o + c] = r.data[o + c] * f;
+    }
+  }
+}
+
+function applyGlare(r: Raster, g: NonNullable<PhotoOpts['glare']>): void {
+  const sx = g.r * r.w;
+  for (let j = 0; j < r.h; j++) {
+    for (let i = 0; i < r.w; i++) {
+      const d2 = (i - g.x * r.w) ** 2 + (j - g.y * r.h) ** 2;
+      const add = g.gain * 255 * Math.exp(-d2 / (2 * sx * sx));
+      const o = (j * r.w + i) * 4;
+      for (let c = 0; c < 3; c++) r.data[o + c] = r.data[o + c] + add;
+    }
+  }
+}
+
+function boxBlur(r: Raster, radius: number): void {
+  const k = Math.max(1, Math.round(radius));
+  const tmp = new Float32Array(r.w * r.h);
+  for (let c = 0; c < 3; c++) {
+    for (let j = 0; j < r.h; j++) {
+      let acc = 0;
+      for (let i = -k; i <= k; i++) acc += r.data[(j * r.w + Math.min(r.w - 1, Math.max(0, i))) * 4 + c];
+      for (let i = 0; i < r.w; i++) {
+        tmp[j * r.w + i] = acc / (2 * k + 1);
+        acc += r.data[(j * r.w + Math.min(r.w - 1, i + k + 1)) * 4 + c] - r.data[(j * r.w + Math.max(0, i - k)) * 4 + c];
+      }
+    }
+    for (let i = 0; i < r.w; i++) {
+      let acc = 0;
+      for (let j = -k; j <= k; j++) acc += tmp[Math.min(r.h - 1, Math.max(0, j)) * r.w + i];
+      for (let j = 0; j < r.h; j++) {
+        r.data[(j * r.w + i) * 4 + c] = acc / (2 * k + 1);
+        acc += tmp[Math.min(r.h - 1, j + k + 1) * r.w + i] - tmp[Math.max(0, j - k) * r.w + i];
+      }
+    }
+  }
 }
 
 export function markerPhotoPoints(paper: PaperId, quad: Pt[]): Pt[] {
